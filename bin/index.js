@@ -7,6 +7,9 @@ const { Readable } = require("stream");
 const { finished } = require("stream/promises");
 const yargs = require("yargs");
 
+const EPSS_DATA_FOLDER =
+  process.env.EPSS_DATA_FOLDER || process.env.HOME || "/tmp";
+
 const epssScores = {};
 
 async function downloadFile(url, path) {
@@ -16,28 +19,28 @@ async function downloadFile(url, path) {
 }
 
 async function syncEpss(refresh = false) {
-  if (!fs.existsSync(`${process.env.HOME}/.epss`)) {
-    fs.mkdirSync(`${process.env.HOME}/.epss`);
+  if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss`)) {
+    fs.mkdirSync(`${EPSS_DATA_FOLDER}/.epss`);
   }
 
-  if (!fs.existsSync(`${process.env.HOME}/.epss/epss.csv.gz`) || refresh) {
+  if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`) || refresh) {
     await downloadFile(
       "https://epss.cyentia.com/epss_scores-current.csv.gz",
-      `${process.env.HOME}/.epss/epss.csv.gz`
+      `${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`
     );
   }
 
-  if (!fs.existsSync(`${process.env.HOME}/.epss/epss.csv`) || refresh) {
+  if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv`) || refresh) {
     // Download GZ file and unzip it
-    const input = fs.createReadStream(`${process.env.HOME}/.epss/epss.csv.gz`);
-    const output = fs.createWriteStream(`${process.env.HOME}/.epss/epss.csv`);
+    const input = fs.createReadStream(`${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`);
+    const output = fs.createWriteStream(`${EPSS_DATA_FOLDER}/.epss/epss.csv`);
     const unzip = zlib.createGunzip();
     await pipeline(input, unzip, output);
   }
 }
 
 async function loadScores(refresh = false) {
-  const csv = fs.readFileSync(`${process.env.HOME}/.epss/epss.csv`, "utf8");
+  const csv = fs.readFileSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv`, "utf8");
   const lines = csv.split("\n");
   let idx = 1;
   for (const line of lines) {
