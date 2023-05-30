@@ -146,6 +146,8 @@ async function audit(verbose = false, threshold = 0.0) {
     console.log(`\n`);
   }
 
+  let tabularData = [];
+
   // Loop through key, value pairs of the advisories object
   let count = 1;
   if (json.advisories && Object.keys(json.advisories).length > 0) {
@@ -168,14 +170,14 @@ async function audit(verbose = false, threshold = 0.0) {
           console.log(`CVSS Score: ${value.cvss.score}`);
           console.log(`CVE: ${value.cves[0]}`);
           console.log(
-            `EPSS Score: ${Number(
+            `EPSS Score: ${+Number(
               epssScores[value.cves[0]].epss * 100.0
             ).toFixed(3)}%`
           );
 
           if (
-            Number(epssScores[value.cves[0]].epss).toFixed(5) >
-            Number(threshold).toFixed(5)
+            +Number(epssScores[value.cves[0]].epss).toFixed(5) >
+            +Number(threshold).toFixed(5)
           ) {
             aboveThreshold = true;
           }
@@ -183,15 +185,19 @@ async function audit(verbose = false, threshold = 0.0) {
         console.log(`\n`);
       } else {
         if (value.cves && value.cves.length > 0) {
-          console.log(
-            `${value.cves[0]} \t CVSS:${value.cvss.score} \t EPSS:${Number(
+          tabularData.push({
+            Module: value.module_name,
+            Severity: value.severity,
+            "CVE ID": value.cves[0],
+            CVSS: value.cvss.score,
+            "EPSS Score (%)": +Number(
               epssScores[value.cves[0]].epss * 100.0
-            ).toFixed(3)}%`
-          );
+            ).toFixed(3),
+          });
 
           if (
-            Number(epssScores[value.cves[0]].epss).toFixed(5) >
-            Number(threshold).toFixed(5)
+            +Number(epssScores[value.cves[0]].epss).toFixed(5) >
+            +Number(threshold).toFixed(5)
           ) {
             aboveThreshold = true;
           }
@@ -199,14 +205,29 @@ async function audit(verbose = false, threshold = 0.0) {
       }
       count++;
     }
+
+    // Sort and print in desc order of EPSS Score %
+    if (!verbose) {
+      tabularData
+        .sort((a, b) =>
+          a["EPSS Score (%)"] > b["EPSS Score (%)"]
+            ? 1
+            : b["EPSS Score (%)"] > a["EPSS Score (%)"]
+            ? -1
+            : 0
+        )
+        .reverse();
+      console.table(tabularData);
+    }
+
     console.log(`\n`);
 
     if (aboveThreshold) {
       if (Number(threshold) > 0.0) {
         console.log(
-          `At least one CVE with EPSS Score threshold ${Number(
+          `At least one CVE with EPSS Score threshold ${+Number(
             threshold
-          ).toFixed(5)} exceeded.`
+          ).toFixed(5)} exceeded.\n`
         );
       }
       process.exit(2);

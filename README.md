@@ -2,8 +2,6 @@
 
 Currently NPM Audit reports severity of vulnerabilities based on the CVSS score. NPM bulk audit response do not include CVEs in the report as of May 2023. This interim tool uses the NPM Quick Audit end point to retrieve associated CVEs and reports corresponding EPSS scores to help prioritize vulnerabilities.
 
-> Note: This is probably just be an interim tool until NPM Audit includes CVEs and EPSS scores in the bulk audit response and audit report.
-
 ## About EPSS
 
 EPSS stands for Exploit Prediction Scoring System. It is a machine learning-based model that predicts the likelihood of a software vulnerability being exploited in the wild. The EPSS score is a number between 0 and 1, with a higher score indicating a higher likelihood of exploitation. The EPSS score is calculated using a variety of factors, including the severity of the vulnerability, the availability of exploit code, and the number of known attacks.
@@ -60,14 +58,27 @@ npm-epss-audit
 
 Auditing <project> v0.1.0
 
-CVE-2022-xxxxx 	 CVSS:7.1 	 EPSS:0.225%
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
 
-# Fail audit only for vulnerabilities with EPSS score greater than 0.5 (50%)
-npm-epss-audit --threshold 0.50
+# Fail audit only for vulnerabilities with EPSS score greater than 0.0015 (0.15%)
+npm-epss-audit --threshold 0.0015
 
-CVE-2022-xxxxx 	 CVSS:7.1 	 EPSS:51.22%
+Auditing <project> v0.1.0
 
-At least one CVE with EPSS Score threshold 0.50000 exceeded.
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
+
+
+At least one CVE with EPSS Score threshold 0.0015 exceeded.
 
 ```
 
@@ -75,6 +86,15 @@ At least one CVE with EPSS Score threshold 0.50000 exceeded.
 
 On first run, the tool will create a folder named .epss in the ${HOME} or "/tmp" folder. This folder will contain the raw EPSS Data file and uncompressed CSV file.
 If you would like to choose a different folder, you may set the `EPSS_DATA_FOLDER` environment variable to the desired folder.
+
+## How to contribute
+
+This tool addresses a gap to take advantage of EPSS Scores for NPM packages, as a starting point to prioritize vulnerabilities.
+This is probably just be an interim tool until NPM Audit includes CVEs and EPSS scores in the bulk audit response and audit report and
+streamline this process for developers.
+
+If you would like to contribute to this project, feel free to fork and create PR if you can.
+Otherwise, create an issue with your thoughts and ideas.
 
 ## References
 
