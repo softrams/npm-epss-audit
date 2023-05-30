@@ -33,24 +33,41 @@ npx npm-epss-audit@latest
 ### Options
 
 ```bash
-Usage: npm-audit-epss [-v|--verbose] [-r|--refresh]
+Usage: npm-epss-audit [-v|--verbose] [-r|--refresh] [-t|--threshold]]
 
 Options:
-      --version  Show version number                                   [boolean]
-  -v, --verbose  Verbose output
-  -r, --refresh  Refresh EPSS scores
-      --help     Show help                                             [boolean]
+      --version    Show version number                                 [boolean]
+  -v, --verbose    Verbose output
+  -r, --refresh    Refresh EPSS scores
+  -t, --threshold  EPSS score threshold to fail the audit  [number] [default: 0.0]
+      --help       Show help                                           [boolean]
 
 ```
+
+### Exit Codes
+
+For use in CI pipelines and automation tools, the tool will exit with the following exit codes:
+
+- 0: Ran successfully and no vulnerabilities found
+- 1: Failed to run due to errors or other configuration issues
+- 2: Ran successfully and vulnerabilities found that exceeded the EPSS Score threshold (default: 0.0, means all vulnerabilities are reported)
 
 ### Example output
 
 ```bash
+# Run with default options
 npm-epss-audit
 
 Auditing <project> v0.1.0
 
 CVE-2022-xxxxx 	 CVSS:7.1 	 EPSS:0.225%
+
+# Fail audit only for vulnerabilities with EPSS score greater than 0.5 (50%)
+npm-epss-audit --threshold 0.50
+
+CVE-2022-xxxxx 	 CVSS:7.1 	 EPSS:51.22%
+
+At least one CVE with EPSS Score threshold 0.50000 exceeded.
 
 ```
 
