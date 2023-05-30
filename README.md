@@ -17,7 +17,7 @@ See EPSS at [https://www.first.org/epss](https://www.first.org/epss).
 > Note: NPM Audit requires that all project dependencies are already installed and package-lock.json file exists. Make sure to install dependencies in the project before running the tool.
 
 ```bash
-npm install -g npm-epss-audit
+npm install -g npm-epss-audit@latest
 
 ## Run the tool in the project directory
 npm-epss-audit
@@ -27,7 +27,7 @@ npm-epss-audit
 
 ```bash
 ## Run the tool in the project directory
-npx npm-epss-audit
+npx npm-epss-audit@latest
 ```
 
 ### Options
