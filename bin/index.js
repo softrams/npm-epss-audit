@@ -65,12 +65,12 @@ async function loadScores(refresh = false) {
   // console.log(`Loaded  ${idx} EPSS scores`);
 }
 
-async function audit(verbose = false) {
+async function audit(verbose = false, threshold = 0.0) {
   if (!fs.existsSync(process.cwd() + "/package.json")) {
     console.log(
       `\nError: package.json not found in ${process.cwd()}. Run 'npm-epss-audit' in the project root directory where package.json is located.`
     );
-    return;
+    process.exit(1);
   }
 
   // Read package.json from the script current working directory,
@@ -85,7 +85,7 @@ async function audit(verbose = false) {
       `\nError: package-lock.json not found in ${process.cwd()}.
        \nMake sure to install all dependencies and run 'npm-epss-audit' in the project root directory where package-lock.json is located.`
     );
-    return;
+    process.exit(1);
   }
 
   // Read package-lock.json from the script current working directory,
@@ -127,8 +127,10 @@ async function audit(verbose = false) {
   const json = await response.json();
   if (json && json.error) {
     console.log(`Error: ${JSON.stringify(json, null, 2)}`);
-    return;
+    process.exit(1);
   }
+
+  let aboveThreshold = false;
 
   // Print results
   // Metadata -> Vulnerabilities
@@ -170,6 +172,13 @@ async function audit(verbose = false) {
               epssScores[value.cves[0]].epss * 100.0
             ).toFixed(3)}%`
           );
+
+          if (
+            Number(epssScores[value.cves[0]].epss).toFixed(5) >
+            Number(threshold).toFixed(5)
+          ) {
+            aboveThreshold = true;
+          }
         }
         console.log(`\n`);
       } else {
@@ -179,13 +188,34 @@ async function audit(verbose = false) {
               epssScores[value.cves[0]].epss * 100.0
             ).toFixed(3)}%`
           );
+
+          if (
+            Number(epssScores[value.cves[0]].epss).toFixed(5) >
+            Number(threshold).toFixed(5)
+          ) {
+            aboveThreshold = true;
+          }
         }
       }
       count++;
     }
     console.log(`\n`);
+
+    if (aboveThreshold) {
+      if (Number(threshold) > 0.0) {
+        console.log(
+          `At least one CVE with EPSS Score threshold ${Number(
+            threshold
+          ).toFixed(5)} exceeded.`
+        );
+      }
+      process.exit(2);
+    } else {
+      process.exit(0);
+    }
   } else {
     console.log(`No vulnerabilities found`);
+    process.exit(0);
   }
 }
 
@@ -193,18 +223,25 @@ async function audit(verbose = false) {
   try {
     const options = yargs
       .scriptName("npm-epss-audit")
-      .usage("Usage: $0 [-v|--verbose] [-r|--refresh]")
+      .usage("Usage: $0 [-v|--verbose] [-r|--refresh] [-t|--threshold]]")
       .option("v", {
         alias: "verbose",
         describe: "Verbose output",
       })
       .option("r", { alias: "refresh", describe: "Refresh EPSS scores" })
+      .option("t", {
+        alias: "threshold",
+        describe: "EPSS score threshold to fail the audit",
+        type: "number",
+        default: 0.0,
+      })
       .help(true).argv;
 
     await syncEpss(options.refresh);
     await loadScores(options.refresh);
-    await audit(options.verbose);
+    await audit(options.verbose, options.threshold);
   } catch (err) {
     console.error(err);
+    process.exit(1);
   }
 })();
