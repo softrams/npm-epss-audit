@@ -8,6 +8,8 @@ Currently NPM Audit reports severity of vulnerabilities based on the CVSS score.
 
 EPSS stands for Exploit Prediction Scoring System. It is a machine learning-based model that predicts the likelihood of a software vulnerability being exploited in the wild. The EPSS score is a number between 0 and 1, with a higher score indicating a higher likelihood of exploitation. The EPSS score is calculated using a variety of factors, including the severity of the vulnerability, the availability of exploit code, and the number of known attacks.
 
+See EPSS at [https://www.first.org/epss](https://www.first.org/epss).
+
 ## Usage
 
 ### Usage via global install option

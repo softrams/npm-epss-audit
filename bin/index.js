@@ -20,10 +20,12 @@ async function downloadFile(url, path) {
 
 async function syncEpss(refresh = false) {
   if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss`)) {
+    console.log(`\nCreating ${EPSS_DATA_FOLDER}/.epss folder`);
     fs.mkdirSync(`${EPSS_DATA_FOLDER}/.epss`);
   }
 
   if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`) || refresh) {
+    console.log(`\nDownloading EPSS scores`);
     await downloadFile(
       "https://epss.cyentia.com/epss_scores-current.csv.gz",
       `${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`
@@ -32,6 +34,7 @@ async function syncEpss(refresh = false) {
 
   if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv`) || refresh) {
     // Download GZ file and unzip it
+    console.log("\nUnzipping EPSS scores data file");
     const input = fs.createReadStream(`${EPSS_DATA_FOLDER}/.epss/epss.csv.gz`);
     const output = fs.createWriteStream(`${EPSS_DATA_FOLDER}/.epss/epss.csv`);
     const unzip = zlib.createGunzip();
@@ -63,11 +66,27 @@ async function loadScores(refresh = false) {
 }
 
 async function audit(verbose = false) {
+  if (!fs.existsSync(process.cwd() + "/package.json")) {
+    console.log(
+      `\nError: package.json not found in ${process.cwd()}. Run 'npm-epss-audit' in the project root directory where package.json is located.`
+    );
+    return;
+  }
+
   // Read package.json from the script current working directory,
   // not from the directory where the script is located.
   const packageJson = JSON.parse(
     fs.readFileSync(process.cwd() + "/package.json")
   );
+
+  // Check if package-lock.json is present.
+  if (!fs.existsSync(process.cwd() + "/package-lock.json")) {
+    console.log(
+      `\nError: package-lock.json not found in ${process.cwd()}.
+       \nMake sure to install all dependencies and run 'npm-epss-audit' in the project root directory where package-lock.json is located.`
+    );
+    return;
+  }
 
   // Read package-lock.json from the script current working directory,
   // not from the directory where the script is located.
