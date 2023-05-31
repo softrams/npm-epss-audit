@@ -17,7 +17,7 @@ See EPSS at [https://www.first.org/epss](https://www.first.org/epss).
 
 See CISA KEV Catalog at [https://www.cisa.gov/known-exploited-vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities).
 
-> **Note**
+> **Warning**
 > The CISA KEV catalog is very limited when it comes to individual NPM packages. This is included to support future use cases of the tool.
 
 ## Usage
