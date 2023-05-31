@@ -22,7 +22,8 @@ See CISA KEV Catalog at [https://www.cisa.gov/known-exploited-vulnerabilities](h
 
 ## Usage
 
-> Note: NPM Audit requires that all project dependencies are already installed and package-lock.json file exists. Make sure to install dependencies in the project before running the tool.
+NPM Audit requires that all project dependencies are already installed and package-lock.json file exists.
+Make sure to install dependencies in the project before running the tool.
 
 ### Usage via npx
 
