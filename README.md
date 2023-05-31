@@ -26,18 +26,18 @@ See CISA KEV Catalog at [https://www.cisa.gov/known-exploited-vulnerabilities](h
 
 > Note: NPM Audit requires that all project dependencies are already installed and package-lock.json file exists. Make sure to install dependencies in the project before running the tool.
 
-```bash
-npm install -g npm-epss-audit@latest
-
-## Run the tool in the project directory
-npm-epss-audit
-```
-
 ### Usage via npx
 
 ```bash
 ## Run the tool in the project directory
 npx npm-epss-audit@latest
+```
+
+```bash
+npm install -g npm-epss-audit@latest
+
+## Run the tool in the project directory
+npm-epss-audit
 ```
 
 ### Options
