@@ -51,7 +51,7 @@ Options:
       --version               Show version number                      [boolean]
   -v, --verbose               Verbose output
   -r, --refresh               Refresh EPSS scores
-  -f, --fail-on-past-duedate  Fail on past due date
+  -f, --fail-on-past-duedate  Fail on past CISA KVE due date
   -t, --threshold             EPSS score threshold to fail the audit
                                                            [number] [default: 0]
       --help                  Show help                                [boolean]
@@ -65,6 +65,9 @@ For use in CI pipelines and automation tools, the tool will exit with the follow
 - 0: Ran successfully and no vulnerabilities found
 - 1: Failed to run due to errors or other configuration issues
 - 2: Ran successfully and vulnerabilities found that exceeded the EPSS Score threshold (default: 0.0, means all vulnerabilities are reported)
+
+You may also use the `--fail-on-past-duedate` option to fail the audit if any of the vulnerabilities are past the CISA KEV due date or
+set the `--threshold` option to a value of your choice greater than 0.0 to fail the audit if any of the vulnerabilities exceed the EPSS Score threshold.
 
 ### Example output
 

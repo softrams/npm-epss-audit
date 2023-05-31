@@ -328,7 +328,7 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
       .option("r", { alias: "refresh", describe: "Refresh EPSS scores" })
       .option("f", {
         alias: "fail-on-past-duedate",
-        describe: "Fail on past due date",
+        describe: "Fail on past CISA KVE due date",
       })
       .option("t", {
         alias: "threshold",
