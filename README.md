@@ -34,6 +34,7 @@ npx npm-epss-audit@latest
 ### Usage via global install option
 
 ```bash
+## Install the tool globally
 npm install -g npm-epss-audit@latest
 
 ## Run the tool in the project directory
