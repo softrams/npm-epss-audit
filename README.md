@@ -3,7 +3,7 @@
 Currently NPM Audit reports severity of vulnerabilities based on the CVSS score. Also the response received from NPM bulk audit used within `npm audit` do not include CVEs in the report as of May 2023. This interim tool uses the NPM Quick Audit end point to retrieve associated CVEs and reports corresponding EPSS scores to help prioritize vulnerabilities.
 
 > **Note**
-> Now includes support to check if a CVE is included in the CISA Known Exploited Vulnerability (KEV) catalog.
+> Version 0.0.12+ includes support to check if a CVE is included in the CISA Known Exploited Vulnerability (KEV) catalog.
 
 ## About EPSS
 
