@@ -2,11 +2,23 @@
 
 Currently NPM Audit reports severity of vulnerabilities based on the CVSS score. NPM bulk audit response do not include CVEs in the report as of May 2023. This interim tool uses the NPM Quick Audit end point to retrieve associated CVEs and reports corresponding EPSS scores to help prioritize vulnerabilities.
 
+> **Note**
+> Now includes support to check if a CVE is included in the CISA Known Exploited Vulnerability (KEV) catalog.
+
 ## About EPSS
 
 EPSS stands for Exploit Prediction Scoring System. It is a machine learning-based model that predicts the likelihood of a software vulnerability being exploited in the wild. The EPSS score is a number between 0 and 1, with a higher score indicating a higher likelihood of exploitation. The EPSS score is calculated using a variety of factors, including the severity of the vulnerability, the availability of exploit code, and the number of known attacks.
 
 See EPSS at [https://www.first.org/epss](https://www.first.org/epss).
+
+## About CISA Known Exploited Vulnerability (KEV) catalog
+
+> For the benefit of the cybersecurity community and network defenders—and to help every organization better manage vulnerabilities and keep pace with threat activity—CISA maintains the authoritative source of vulnerabilities that have been exploited in the wild: the Known Exploited Vulnerability (KEV) catalog.
+
+See CISA KEV Catalog at [https://www.cisa.gov/known-exploited-vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities).
+
+> **Note**
+> The CISA KEV catalog is very limited when it comes to individual NPM packages. This is included for future updates to the tool.
 
 ## Usage
 
@@ -58,24 +70,24 @@ npm-epss-audit
 
 Auditing <project> v0.1.0
 
-┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
-│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
-├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
-│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
-│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
-└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┬───────────┬──────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │ CISA KEV? │ Due Date │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┼───────────┼──────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │   'No'    │    ''    │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │   'No'    │    ''    │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┴───────────┴──────────┘
 
 # Fail audit only for vulnerabilities with EPSS score greater than 0.0015 (0.15%)
 npm-epss-audit --threshold 0.0015
 
 Auditing <project> v0.1.0
 
-┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
-│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
-├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
-│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
-│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
-└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┬───────────┬──────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │ CISA KEV? │ Due Date │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┼───────────┼──────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │   'No'    │    ''    │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │   'No'    │    ''    │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┴───────────┴──────────┘
 
 
 At least one CVE with EPSS Score threshold 0.0015 exceeded.
@@ -101,3 +113,4 @@ Otherwise, create an issue with your thoughts and ideas.
 - [EPSS](https://www.first.org/epss/data_stats)
 - [NPM Audit](https://docs.npmjs.com/cli/v9/commands/npm-audit)
 - [NPM Quick Audit](https://docs.npmjs.com/cli/v9/commands/npm-audit#quick-audit-endpoint)
+- [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities)

@@ -11,11 +11,27 @@ const EPSS_DATA_FOLDER =
   process.env.EPSS_DATA_FOLDER || process.env.HOME || "/tmp";
 
 const epssScores = {};
+const kevData = {};
 
 async function downloadFile(url, path) {
   const outfile = fs.createWriteStream(path);
   const response = await fetch(url);
   await finished(Readable.fromWeb(response.body).pipe(outfile));
+}
+
+async function syncKEV(refresh = false) {
+  if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss`)) {
+    console.log(`\nCreating ${EPSS_DATA_FOLDER}/.epss folder`);
+    fs.mkdirSync(`${EPSS_DATA_FOLDER}/.epss`);
+  }
+
+  if (!fs.existsSync(`${EPSS_DATA_FOLDER}/.epss/kev.json`) || refresh) {
+    console.log(`\nDownloading CISA Known Exploited Vulnerabilities catalog`);
+    await downloadFile(
+      "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
+      `${EPSS_DATA_FOLDER}/.epss/kev.json`
+    );
+  }
 }
 
 async function syncEpss(refresh = false) {
@@ -42,6 +58,19 @@ async function syncEpss(refresh = false) {
   }
 }
 
+async function loadKEVCatalog(refresh = false) {
+  const kevContents = fs.readFileSync(
+    `${EPSS_DATA_FOLDER}/.epss/kev.json`,
+    "utf8"
+  );
+  const kev = JSON.parse(kevContents);
+  for (const item of kev.vulnerabilities) {
+    kevData[item.cveID] = {
+      ...item,
+    };
+  }
+}
+
 async function loadScores(refresh = false) {
   const csv = fs.readFileSync(`${EPSS_DATA_FOLDER}/.epss/epss.csv`, "utf8");
   const lines = csv.split("\n");
@@ -65,7 +94,7 @@ async function loadScores(refresh = false) {
   // console.log(`Loaded  ${idx} EPSS scores`);
 }
 
-async function audit(verbose = false, threshold = 0.0) {
+async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
   if (!fs.existsSync(process.cwd() + "/package.json")) {
     console.log(
       `\nError: package.json not found in ${process.cwd()}. Run 'npm-epss-audit' in the project root directory where package.json is located.`
@@ -131,6 +160,9 @@ async function audit(verbose = false, threshold = 0.0) {
   }
 
   let aboveThreshold = false;
+  let pastDueDate = false;
+
+  const today = new Date();
 
   // Print results
   // Metadata -> Vulnerabilities
@@ -166,6 +198,7 @@ async function audit(verbose = false, threshold = 0.0) {
         );
         console.log(`More info: ${value.url}`);
         console.log(`\n`);
+
         if (value.cves && value.cves.length > 0) {
           console.log(`CVSS Score: ${value.cvss.score}`);
           console.log(`CVE: ${value.cves[0]}`);
@@ -175,6 +208,23 @@ async function audit(verbose = false, threshold = 0.0) {
             ).toFixed(3)}%`
           );
 
+          // Check if CVW is in Known Exploratory Vulnerabilities
+          const kve = kevData[value.cves[0]];
+          if (kve) {
+            console.log(`CISA Known Exploited Vulnerability: Yes`);
+            console.log(`  Date Added: ${kve.dateAdded}`);
+            console.log(`  Due Date: ${kve.dueDate}`);
+
+            // Check if due date is in the past
+            const dueDate = new Date(kve.dueDate);
+            if (today > dueDate) {
+              pastDueDate = true;
+            }
+          } else {
+            console.log(`CISA Known Exploited Vulnerability: No`);
+          }
+
+          // Check if EPSS score is above threshold
           if (
             +Number(epssScores[value.cves[0]].epss).toFixed(5) >
             +Number(threshold).toFixed(5)
@@ -182,9 +232,12 @@ async function audit(verbose = false, threshold = 0.0) {
             aboveThreshold = true;
           }
         }
+
         console.log(`\n`);
       } else {
         if (value.cves && value.cves.length > 0) {
+          const kve = kevData[value.cves[0]];
+
           tabularData.push({
             Module: value.module_name,
             Severity: value.severity,
@@ -193,13 +246,24 @@ async function audit(verbose = false, threshold = 0.0) {
             "EPSS Score (%)": +Number(
               epssScores[value.cves[0]].epss * 100.0
             ).toFixed(3),
+            "CISA KEV?": kve ? "Yes" : "No",
+            "Due Date": kve ? kve.dueDate : "",
           });
 
+          // Check if EPSS score is above threshold
           if (
             +Number(epssScores[value.cves[0]].epss).toFixed(5) >
             +Number(threshold).toFixed(5)
           ) {
             aboveThreshold = true;
+          }
+
+          // Check if due date is in the past
+          if (kve) {
+            const dueDate = new Date(kve.dueDate);
+            if (today > dueDate) {
+              pastDueDate = true;
+            }
           }
         }
       }
@@ -222,6 +286,16 @@ async function audit(verbose = false, threshold = 0.0) {
 
     console.log(`\n`);
 
+    if (pastDueDate) {
+      console.log(
+        `At least one CVE is past its due date as per CISA Known Exploited Vulnerabilities Catalog.\n`
+      );
+
+      if (failOnPastDue) {
+        process.exit(2);
+      }
+    }
+
     if (aboveThreshold) {
       if (Number(threshold) > 0.0) {
         console.log(
@@ -231,9 +305,9 @@ async function audit(verbose = false, threshold = 0.0) {
         );
       }
       process.exit(2);
-    } else {
-      process.exit(0);
     }
+
+    process.exit(0);
   } else {
     console.log(`No vulnerabilities found`);
     process.exit(0);
@@ -244,7 +318,9 @@ async function audit(verbose = false, threshold = 0.0) {
   try {
     const options = yargs
       .scriptName("npm-epss-audit")
-      .usage("Usage: $0 [-v|--verbose] [-r|--refresh] [-t|--threshold]]")
+      .usage(
+        "Usage: $0 [-v|--verbose] [-r|--refresh] [-t|--threshold]] [-f|--fail-on-past-duedate]"
+      )
       .option("v", {
         alias: "verbose",
         describe: "Verbose output",
@@ -256,11 +332,23 @@ async function audit(verbose = false, threshold = 0.0) {
         type: "number",
         default: 0.0,
       })
+      .option("f", {
+        alias: "fail-on-past-duedate",
+        describe: "Fail on past due date",
+      })
       .help(true).argv;
 
     await syncEpss(options.refresh);
+    await syncKEV(options.refresh);
+
     await loadScores(options.refresh);
-    await audit(options.verbose, options.threshold);
+    await loadKEVCatalog(options.refresh);
+
+    await audit(
+      options.verbose,
+      options.threshold,
+      options["fail-on-past-duedate"]
+    );
   } catch (err) {
     console.error(err);
     process.exit(1);
