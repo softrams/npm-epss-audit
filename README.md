@@ -1,6 +1,9 @@
 # NPM EPSS Audit
 
-Currently NPM Audit reports severity of vulnerabilities based on the CVSS score. NPM bulk audit response do not include CVEs in the report as of May 2023. This interim tool uses the NPM Quick Audit end point to retrieve associated CVEs and reports corresponding EPSS scores to help prioritize vulnerabilities.
+Currently NPM Audit reports severity of vulnerabilities based on the CVSS score. Also the response received from NPM bulk audit used within `npm audit` do not include CVEs in the report as of May 2023. This interim tool uses the NPM Quick Audit end point to retrieve associated CVEs and reports corresponding EPSS scores to help prioritize vulnerabilities.
+
+> **Note**
+> Version 0.0.12+ includes support to check if a CVE is included in the CISA Known Exploited Vulnerability (KEV) catalog.
 
 ## About EPSS
 
@@ -8,18 +11,19 @@ EPSS stands for Exploit Prediction Scoring System. It is a machine learning-base
 
 See EPSS at [https://www.first.org/epss](https://www.first.org/epss).
 
+## About CISA Known Exploited Vulnerability (KEV) catalog
+
+> For the benefit of the cybersecurity community and network defenders—and to help every organization better manage vulnerabilities and keep pace with threat activity—CISA maintains the authoritative source of vulnerabilities that have been exploited in the wild: the Known Exploited Vulnerability (KEV) catalog. CISA strongly recommends all organizations review and monitor the KEV catalog and prioritize remediation of the listed vulnerabilities to reduce the likelihood of compromise by known threat actors. All federal civilian executive branch (FCEB) agencies are required to remediate vulnerabilities in the KEV catalog within prescribed timeframes.
+
+See CISA KEV Catalog at [https://www.cisa.gov/known-exploited-vulnerabilities](https://www.cisa.gov/known-exploited-vulnerabilities).
+
+> **Warning**
+> The CISA KEV catalog is very limited when it comes to individual NPM packages. This is included to support future use cases of the tool.
+
 ## Usage
 
-### Usage via global install option
-
-> Note: NPM Audit requires that all project dependencies are already installed and package-lock.json file exists. Make sure to install dependencies in the project before running the tool.
-
-```bash
-npm install -g npm-epss-audit@latest
-
-## Run the tool in the project directory
-npm-epss-audit
-```
+NPM Audit requires that all project dependencies are already installed and package-lock.json file exists.
+Make sure to install dependencies in the project before running the tool.
 
 ### Usage via npx
 
@@ -28,17 +32,29 @@ npm-epss-audit
 npx npm-epss-audit@latest
 ```
 
+### Usage via global install option
+
+```bash
+## Install the tool globally
+npm install -g npm-epss-audit@latest
+
+## Run the tool in the project directory
+npm-epss-audit
+```
+
 ### Options
 
 ```bash
-Usage: npm-epss-audit [-v|--verbose] [-r|--refresh] [-t|--threshold]]
+Usage: npm-epss-audit [-v|--verbose] [-r|--refresh] [-f|--fail-on-past-duedate] [-t|--threshold]
 
 Options:
-      --version    Show version number                                 [boolean]
-  -v, --verbose    Verbose output
-  -r, --refresh    Refresh EPSS scores
-  -t, --threshold  EPSS score threshold to fail the audit  [number] [default: 0.0]
-      --help       Show help                                           [boolean]
+      --version               Show version number                      [boolean]
+  -v, --verbose               Verbose output
+  -r, --refresh               Refresh EPSS scores
+  -f, --fail-on-past-duedate  Fail on past CISA KVE due date
+  -t, --threshold             EPSS score threshold to fail the audit
+                                                           [number] [default: 0]
+      --help                  Show help                                [boolean]
 
 ```
 
@@ -50,6 +66,9 @@ For use in CI pipelines and automation tools, the tool will exit with the follow
 - 1: Failed to run due to errors or other configuration issues
 - 2: Ran successfully and vulnerabilities found that exceeded the EPSS Score threshold (default: 0.0, means all vulnerabilities are reported)
 
+You may also use the `--fail-on-past-duedate` option to fail the audit if any of the vulnerabilities are past the CISA KEV due date or
+set the `--threshold` option to a value of your choice greater than 0.0 to fail the audit if any of the vulnerabilities exceed the EPSS Score threshold.
+
 ### Example output
 
 ```bash
@@ -58,24 +77,24 @@ npm-epss-audit
 
 Auditing <project> v0.1.0
 
-┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
-│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
-├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
-│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
-│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
-└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┬───────────┬──────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │ CISA KEV? │ Due Date │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┼───────────┼──────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │   'No'    │    ''    │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │   'No'    │    ''    │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┴───────────┴──────────┘
 
 # Fail audit only for vulnerabilities with EPSS score greater than 0.0015 (0.15%)
 npm-epss-audit --threshold 0.0015
 
 Auditing <project> v0.1.0
 
-┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┐
-│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │
-├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┤
-│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │
-│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │
-└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┘
+┌─────────┬────────────────────────┬────────────┬──────────────────┬──────┬────────────────┬───────────┬──────────┐
+│ (index) │         Module         │  Severity  │      CVE ID      │ CVSS │ EPSS Score (%) │ CISA KEV? │ Due Date │
+├─────────┼────────────────────────┼────────────┼──────────────────┼──────┼────────────────┼───────────┼──────────┤
+│    0    │        'json5'         │   'high'   │ 'CVE-2022-46175' │ 7.1  │     0.225      │   'No'    │    ''    │
+│    1    │     'loader-utils'     │ 'critical' │ 'CVE-2022-37601' │ 9.8  │     0.163      │   'No'    │    ''    │
+└─────────┴────────────────────────┴────────────┴──────────────────┴──────┴────────────────┴───────────┴──────────┘
 
 
 At least one CVE with EPSS Score threshold 0.0015 exceeded.
@@ -101,3 +120,4 @@ Otherwise, create an issue with your thoughts and ideas.
 - [EPSS](https://www.first.org/epss/data_stats)
 - [NPM Audit](https://docs.npmjs.com/cli/v9/commands/npm-audit)
 - [NPM Quick Audit](https://docs.npmjs.com/cli/v9/commands/npm-audit#quick-audit-endpoint)
+- [CISA KEV](https://www.cisa.gov/known-exploited-vulnerabilities)
