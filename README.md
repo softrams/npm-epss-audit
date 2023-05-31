@@ -43,14 +43,16 @@ npx npm-epss-audit@latest
 ### Options
 
 ```bash
-Usage: npm-epss-audit [-v|--verbose] [-r|--refresh] [-t|--threshold]]
+Usage: npm-epss-audit [-v|--verbose] [-r|--refresh] [-f|--fail-on-past-duedate] [-t|--threshold]
 
 Options:
-      --version    Show version number                                 [boolean]
-  -v, --verbose    Verbose output
-  -r, --refresh    Refresh EPSS scores
-  -t, --threshold  EPSS score threshold to fail the audit  [number] [default: 0.0]
-      --help       Show help                                           [boolean]
+      --version               Show version number                      [boolean]
+  -v, --verbose               Verbose output
+  -r, --refresh               Refresh EPSS scores
+  -f, --fail-on-past-duedate  Fail on past due date
+  -t, --threshold             EPSS score threshold to fail the audit
+                                                           [number] [default: 0]
+      --help                  Show help                                [boolean]
 
 ```
 

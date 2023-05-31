@@ -319,22 +319,22 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
     const options = yargs
       .scriptName("npm-epss-audit")
       .usage(
-        "Usage: $0 [-v|--verbose] [-r|--refresh] [-t|--threshold]] [-f|--fail-on-past-duedate]"
+        "Usage: $0 [-v|--verbose] [-r|--refresh] [-f|--fail-on-past-duedate] [-t|--threshold]"
       )
       .option("v", {
         alias: "verbose",
         describe: "Verbose output",
       })
       .option("r", { alias: "refresh", describe: "Refresh EPSS scores" })
+      .option("f", {
+        alias: "fail-on-past-duedate",
+        describe: "Fail on past due date",
+      })
       .option("t", {
         alias: "threshold",
         describe: "EPSS score threshold to fail the audit",
         type: "number",
         default: 0.0,
-      })
-      .option("f", {
-        alias: "fail-on-past-duedate",
-        describe: "Fail on past due date",
       })
       .help(true).argv;
 
