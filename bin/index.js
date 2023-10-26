@@ -160,8 +160,10 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
   }
 
   let aboveThreshold = false;
+  let unknownCVE = false;
   let pastDueDate = false;
 
+  const UNKNOWN = "n/a"
   const today = new Date();
 
   // Print results
@@ -202,11 +204,16 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
         if (value.cves && value.cves.length > 0) {
           console.log(`CVSS Score: ${value.cvss.score}`);
           console.log(`CVE: ${value.cves[0]}`);
-          console.log(
-            `EPSS Score: ${+Number(
-              epssScores[value.cves[0]].epss * 100.0
-            ).toFixed(3)}%`
-          );
+          if (value.cves[0] in epssScores) {
+            console.log(
+              `EPSS Score: ${+Number(
+                epssScores[value.cves[0]].epss * 100.0
+              ).toFixed(3)}%`
+            );
+          } else {
+            unknownCVE = true;
+            console.log('EPSS Score: Not Found!');
+          }
 
           // Check if CVW is in Known Exploratory Vulnerabilities
           const kve = kevData[value.cves[0]];
@@ -226,6 +233,7 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
 
           // Check if EPSS score is above threshold
           if (
+            value.cves[0] in epssScores &&
             +Number(epssScores[value.cves[0]].epss).toFixed(5) >
             +Number(threshold).toFixed(5)
           ) {
@@ -237,21 +245,26 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
       } else {
         if (value.cves && value.cves.length > 0) {
           const kve = kevData[value.cves[0]];
+          epssScore = value.cves[0] in epssScores ? +Number(epssScores[value.cves[0]].epss * 100.0).toFixed(3): UNKNOWN;
+
+          if (epssScore == UNKNOWN) {
+            unknownCVE = true;
+          }
 
           tabularData.push({
             Module: value.module_name,
             Severity: value.severity,
             "CVE ID": value.cves[0],
             CVSS: value.cvss.score,
-            "EPSS Score (%)": +Number(
-              epssScores[value.cves[0]].epss * 100.0
-            ).toFixed(3),
+            "EPSS Score (%)": epssScore,
             "CISA KEV?": kve ? "Yes" : "No",
-            "Due Date": kve ? kve.dueDate : "",
+            "Due Date": kve ? kve.dueDate : "N/A",
+            "More Info": value.url
           });
 
           // Check if EPSS score is above threshold
           if (
+            epssScore != UNKNOWN &&
             +Number(epssScores[value.cves[0]].epss).toFixed(5) >
             +Number(threshold).toFixed(5)
           ) {
@@ -274,9 +287,9 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
     if (!verbose) {
       tabularData
         .sort((a, b) =>
-          a["EPSS Score (%)"] > b["EPSS Score (%)"]
+            a["EPSS Score (%)"] == UNKNOWN || a["EPSS Score (%)"] > b["EPSS Score (%)"]
             ? 1
-            : b["EPSS Score (%)"] > a["EPSS Score (%)"]
+            : b["EPSS Score (%)"] == UNKNOWN || b["EPSS Score (%)"] > a["EPSS Score (%)"]
             ? -1
             : 0
         )
@@ -286,6 +299,10 @@ async function audit(verbose = false, threshold = 0.0, failOnPastDue = false) {
 
     console.log(`\n`);
 
+    if (unknownCVE) {
+      // not exiting early, this likely indicates a CVE that hasn't been fully disclosed yet
+      console.log("Could not find EPSS Score for at least one CVE\n");
+    }
     if (pastDueDate) {
       console.log(
         `At least one CVE is past its due date as per CISA Known Exploited Vulnerabilities Catalog.\n`
